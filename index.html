@@ -259,6 +259,13 @@
   .teamcard .tc{font-size:12.5px;color:var(--ink-soft);margin-top:2px}
   .chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:12px}
   .chip{font-size:12px;background:var(--surface-3);color:var(--ink-soft);padding:3px 10px;border-radius:999px}
+  table.ev.agenda{min-width:1240px;font-size:12.5px}
+  table.ev.agenda th,table.ev.agenda td{padding:9px 12px}
+  table.ev.agenda td{vertical-align:top}
+  .evseq{color:var(--ink-faint);font-variant-numeric:tabular-nums}
+  .subtle{color:var(--ink-faint);font-size:11px;margin-top:1px}
+  .scrollhint{font-size:11.5px;color:var(--ink-faint);display:flex;align-items:center;gap:5px;margin:0 0 8px}
+  .scrollhint svg{width:14px;height:14px}
   .screen{display:none}.screen.show{display:block}
 </style>
 </head>
@@ -377,10 +384,19 @@
       <section class="screen" id="dia">
         <button class="backlink" data-go="calendario"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 5l-7 7 7 7"/></svg>Voltar ao calendário</button>
         <h2 class="pagetitle" style="font-family:var(--serif);font-size:24px;margin:0">Sábado, 19 de dezembro</h2>
-        <p class="pagesub" style="margin:2px 0 14px"><strong>87 eventos</strong> neste dia · ordenados por horário</p>
-        <div class="peakbanner"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2 3 20h18L12 2z"/><path d="M12 9v5M12 17h.01"/></svg>Dia de pico — role a tela para ver todos os 87 eventos, ou use a busca.</div>
+        <p class="pagesub" style="margin:2px 0 14px" id="daySummary"><strong>87 eventos</strong> neste dia</p>
+        <div class="peakbanner"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2 3 20h18L12 2z"/><path d="M12 9v5M12 17h.01"/></svg>Dia de pico — role para baixo para ver todos os eventos e para o lado para ver todas as colunas.</div>
         <div class="search"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m20 20-3-3"/></svg><input id="daySearch" placeholder="Buscar por cliente ou cidade…"></div>
-        <div class="card" style="padding:6px 16px"><div class="rows" id="dayRows"></div></div>
+        <p class="scrollhint"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 7l-4 5 4 5M16 7l4 5-4 5"/></svg>Arraste a tabela para o lado para ver mais colunas</p>
+        <div class="tablewrap"><table class="ev agenda">
+          <thead><tr>
+            <th>#</th><th>Horário</th><th>Cliente · contato</th><th>Cidade · bairro</th><th>Tipo</th>
+            <th>Forno</th><th>Pessoas</th><th>Modelo</th><th>Tipo forno</th>
+            <th class="money">R$/pessoa</th><th class="money">Total</th><th class="money">Sinal</th><th class="money">A acertar</th>
+            <th>Pagamento</th><th>Situação</th>
+          </tr></thead>
+          <tbody id="dayBody"></tbody>
+        </table></div>
       </section>
 
       <!-- EVENTOS -->
@@ -395,21 +411,33 @@
         <div class="formcard card" id="formEvento" hidden>
           <h4>Cadastrar evento</h4>
           <div class="fields">
-            <div class="field"><label>Cliente</label><input placeholder="Nome do cliente"></div>
-            <div class="field"><label>Tipo do evento</label><select><option>Aniversário</option><option>Formatura</option><option>Empresarial</option><option>Confraternização</option><option>Casamento</option><option>+ Cadastrar novo tipo…</option></select></div>
-            <div class="field"><label>Data</label><input placeholder="19/12/2026"></div>
+            <div class="field"><label>Cliente / contato</label><input id="neCliente" placeholder="Nome do cliente"></div>
+            <div class="field"><label>Telefone / WhatsApp</label><input placeholder="(51) 90000-0000"></div>
+            <div class="field"><label>Tipo do evento</label><select id="neTipo"><option>Aniversário</option><option>Confraternização</option><option>Empresarial</option><option>Formatura</option><option>Casamento</option><option>Encontro de casais</option><option>+ Cadastrar novo tipo…</option></select></div>
+            <div class="field"><label>Data do evento</label><input id="neData" placeholder="19/12/2026"></div>
+            <div class="field"><label>Data da contratação</label><input placeholder="09/06/2026"></div>
             <div class="field"><label>Horário</label><input placeholder="20:00"></div>
-            <div class="field"><label>Cidade</label><input placeholder="São Paulo"></div>
-            <div class="field"><label>Equipe (nº de pessoas)</label><input placeholder="4"></div>
-            <div class="field money"><label>Valor fechado (R$)</label><input placeholder="1500"></div>
-            <div class="field"><label>Status</label><select><option>Agendado</option><option>Confirmado</option><option>Realizado</option><option>Cancelado</option></select></div>
+            <div class="field"><label>Cidade</label><input id="neCidade" placeholder="Porto Alegre"></div>
+            <div class="field"><label>Bairro / referência</label><input placeholder="Centro"></div>
+            <div class="field"><label>Endereço</label><input placeholder="Rua, número"></div>
+            <div class="field"><label>Modelo de rodízio</label><select id="neModelo"><option>Clássico — R$ 49,90</option><option>Premium 3h — R$ 59,90</option><option>Premium 4h — R$ 64,90</option><option>Premium 6h — R$ 69,90</option><option>Plus 3h — R$ 79,90</option><option>Plus 4h — R$ 84,90</option><option>Fácil c/ bebida — R$ 72,00</option><option>Rodízio fácil — R$ 65,32</option></select></div>
+            <div class="field"><label>Tipo de forno</label><select><option>Gás</option><option>Elétrico 220v</option><option>Elétrico 110v</option></select></div>
+            <div class="field"><label>Forno / operador</label><input placeholder="Ex: Everton"></div>
+            <div class="field"><label>Inteiros</label><input id="nePessoas" placeholder="30"></div>
+            <div class="field"><label>Meios</label><input placeholder="2"></div>
+            <div class="field money"><label>Deslocamento (R$)</label><input placeholder="50"></div>
+            <div class="field money"><label>Sinal (R$)</label><input placeholder="300"></div>
+            <div class="field money"><label>Total do evento (R$)</label><input id="neTotal" placeholder="1500"></div>
+            <div class="field"><label>Forma de pagamento</label><select><option>Pix</option><option>Dinheiro</option><option>Crédito à vista</option><option>Crédito 2x</option><option>Crédito 4x</option></select></div>
+            <div class="field"><label>Situação</label><select id="neSituacao"><option>Agendado</option><option>A confirmar</option><option>Confirmado</option><option>Finalizado</option><option>Cancelado</option></select></div>
           </div>
+          <div class="field" style="margin-top:14px"><label>Observação</label><input placeholder="Ex: chegada 14h, entregar os porta-pizzas antes do início…"></div>
           <div class="formactions"><button class="btn primary" id="saveEvento">Salvar evento</button><button class="btn" id="cancelEvento">Cancelar</button></div>
         </div>
         <div class="lockrow"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="10" width="16" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg>Valores ocultos — visíveis só para o Admin.</div>
         <div class="search"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m20 20-3-3"/></svg><input id="evSearch" placeholder="Buscar evento, cliente ou cidade…"></div>
         <div class="tablewrap"><table class="ev">
-          <thead><tr><th>Data</th><th>Cliente</th><th>Tipo</th><th>Cidade</th><th>Equipe</th><th>Status</th><th class="money">Valor</th></tr></thead>
+          <thead><tr><th>Data</th><th>Cliente</th><th>Tipo</th><th>Cidade</th><th>Pessoas</th><th>Modelo</th><th>Status</th><th class="money">Valor</th></tr></thead>
           <tbody id="evBody"></tbody>
         </table></div>
       </section>
@@ -525,61 +553,89 @@
   }).join('');
 
   // ---- City bars ----
-  var cities=[['São Paulo',210],['Guarulhos',96],['Osasco',74],['Santo André',58],['Barueri',41],['Campinas',33]];
+  var cities=[['Porto Alegre',210],['Canoas',96],['Novo Hamburgo',74],['Gravataí',58],['Viamão',41],['São Leopoldo',33]];
   var cmx=cities[0][1];
   document.getElementById('cityBars').innerHTML=cities.map(function(c){
     return '<div class="cbar"><span>'+c[0]+'</span><span class="track"><span class="fill" style="width:'+Math.round(c[1]/cmx*100)+'%"></span></span><span class="cn">'+c[1]+'</span></div>';
   }).join('');
 
   // ---- Events data ----
-  function pill(s){var m={Agendado:'agendado',Confirmado:'confirmado',Realizado:'realizado',Cancelado:'cancelado'};
-    return '<span class="pill p-'+m[s]+'">'+s+'</span>';}
+  function pill(s){var m={Agendado:'agendado','A confirmar':'agendado',Confirmado:'confirmado',Realizado:'realizado',Finalizado:'realizado',Cancelado:'cancelado'};
+    return '<span class="pill p-'+(m[s]||'agendado')+'">'+s+'</span>';}
 
-  var fNames=['Fernanda Lima','Tech Solutions','Colégio Santa Rosa','Marcos Antônio','Loja Center Mais','Ana & Rafael','Juliana Prado','Condomínio Vila Real','Bruno Cardoso','Farmácia Bem Viver','Patrícia Gomes','Escola Novo Saber','Ricardo Nunes','Auto Peças Zena','Camila & Diego','Helena Martins','Grupo Ômega','Sandra Ribeiro','Padaria Estrela','Clínica Vida','Márcia Toledo','Gustavo Pinho','Igreja Boa Nova','Rafaela Costa','Pedro Henrique','Mercado Dia a Dia','Vanessa Rocha','Colégio Objetivo','Otávio Braga','Laura Mendes'];
-  var etypes=['Aniversário','Empresarial','Formatura','Confraternização','Casamento'];
-  var ecities=['São Paulo','Guarulhos','Osasco','Santo André','Barueri','Campinas'];
-  var baseVal={'Aniversário':650,'Empresarial':2200,'Formatura':3000,'Confraternização':1400,'Casamento':5600};
-  var baseTeam={'Aniversário':3,'Empresarial':6,'Formatura':8,'Confraternização':5,'Casamento':11};
+  var operadores=['Luiz','Everton','Jéssica','Ruan','Eduarda','Alex','Júlia','Cristian','Bibiana','Alexandre'];
+  var contatos=['Tábata Matte','Rhuan Domingos','Juliana Fischer','Lisiane Vicari','Cíntia Junqueira','Priscila Alves','Simone Dias','Keila Fumegali','Maristela Obalski','Patrícia Almeida','Fernanda Bitello','Amanda Carolina','Naides Haubert','Carol Vieira','Roberto Lima','Michelle Dornelles','Caroline Souza','Anderson Silva','Neide Ramos','Laura Silvino'];
+  var etypes=['Aniversário','Confraternização','Empresarial','Formatura','Casamento','Encontro de casais'];
+  var ecities=['Porto Alegre','Canoas','Novo Hamburgo','São Leopoldo','Gravataí','Viamão','Cachoeirinha','Campo Bom','Alvorada','Sapucaia do Sul','Esteio','Osório'];
+  var bairros=['Centro','Sarandi','Tristeza','Glória','Rondônia','Scharlau','Mathias Velho','Independência','Vila Ipiranga','Lomba Grande','São José','Marechal Rondon'];
+  var modelos=[['Clássico',49.90],['Premium 3h',59.90],['Premium 4h',64.90],['Premium 6h',69.90],['Plus 3h',79.90],['Plus 4h',84.90],['Fácil c/ bebida',72.00],['Rodízio fácil',65.32]];
+  var fornoTipos=['Gás','Elétrico 220v','Elétrico 110v'];
+  var pagamentos=['Pix','Dinheiro','Crédito 4x','Crédito 2x','Crédito à vista'];
+  var situacoes=['Confirmado','Confirmado','Confirmado','Agendado','A confirmar'];
   function pad2(n){return n<10?'0'+n:''+n;}
-  var dayEvents=[];
-  for(var di=0;di<87;di++){
-    var mins=600+di*8, hh=Math.floor(mins/60), mm=mins%60, tp=etypes[di%etypes.length];
-    dayEvents.push([pad2(hh)+':'+pad2(mm), fNames[di%fNames.length], tp, ecities[di%ecities.length], baseTeam[tp]+(di%3), baseVal[tp]+(di%4)*30, (di%7===0?'Agendado':'Confirmado')]);
-  }
   function money(n){return 'R$ '+n.toLocaleString('pt-BR');}
+  function fmt2(n){return 'R$ '+n.toFixed(2).replace('.',',');}
+  var agenda=[];
+  for(var di=0;di<87;di++){
+    var mins=600+di*8, md=modelos[di%modelos.length];
+    var inteiros=18+(di*7)%95, meios=di%4, vp=md[1];
+    var desloc=(di%3===0)?0:40+(di%5)*10;
+    var total=Math.round((inteiros+meios*0.5)*vp+desloc), sinal=Math.round(total*0.3);
+    agenda.push({seq:di+1, hora:pad2(Math.floor(mins/60))+':'+pad2(mins%60),
+      contato:contatos[di%contatos.length], tel:'(51) 9'+(6000+di*37%3999)+'-'+(1000+di*53%8999),
+      cidade:ecities[di%ecities.length], bairro:bairros[di%bairros.length],
+      tipo:etypes[di%etypes.length], forno:operadores[di%operadores.length],
+      inteiros:inteiros, meios:meios, modelo:md[0], vp:vp, fornoTipo:fornoTipos[di%fornoTipos.length],
+      total:total, sinal:sinal, acertar:total-sinal,
+      pagto:pagamentos[di%pagamentos.length], situacao:situacoes[di%situacoes.length]});
+  }
   function renderDay(filter){
     filter=(filter||'').toLowerCase();
-    var html=dayEvents.filter(function(e){
-      return !filter || e[1].toLowerCase().indexOf(filter)>=0 || e[3].toLowerCase().indexOf(filter)>=0;
-    }).map(function(e){
-      return '<div class="row"><div class="time">'+e[0]+'</div><div class="rmain">'+
-        '<div class="rtitle">'+e[1]+'</div><div class="rmeta"><span class="tag">'+e[2]+'</span> · '+e[3]+'</div></div>'+
-        '<div class="team">'+e[4]+' 👤</div>'+
-        '<div class="rval money">'+money(e[5])+'</div></div>';
-    }).join('');
-    document.getElementById('dayRows').innerHTML=html||'<div class="row"><div class="rmeta">Nenhum evento encontrado.</div></div>';
+    var list=agenda.filter(function(e){return !filter||e.contato.toLowerCase().indexOf(filter)>=0||e.cidade.toLowerCase().indexOf(filter)>=0;});
+    document.getElementById('dayBody').innerHTML=list.map(function(e){
+      return '<tr>'+
+        '<td class="evseq">'+e.seq+'</td>'+
+        '<td style="font-weight:600;font-variant-numeric:tabular-nums">'+e.hora+'</td>'+
+        '<td><div style="font-weight:600">'+e.contato+'</div><div class="subtle">'+e.tel+'</div></td>'+
+        '<td>'+e.cidade+'<div class="subtle">'+e.bairro+'</div></td>'+
+        '<td><span class="tag">'+e.tipo+'</span></td>'+
+        '<td>'+e.forno+'</td>'+
+        '<td style="font-variant-numeric:tabular-nums">'+e.inteiros+(e.meios?' + '+e.meios+' meia':'')+'</td>'+
+        '<td>'+e.modelo+'</td>'+
+        '<td>'+e.fornoTipo+'</td>'+
+        '<td class="money" style="font-variant-numeric:tabular-nums">'+fmt2(e.vp)+'</td>'+
+        '<td class="money" style="font-variant-numeric:tabular-nums;font-weight:600">'+money(e.total)+'</td>'+
+        '<td class="money" style="font-variant-numeric:tabular-nums">'+money(e.sinal)+'</td>'+
+        '<td class="money" style="font-variant-numeric:tabular-nums">'+money(e.acertar)+'</td>'+
+        '<td>'+e.pagto+'</td>'+
+        '<td>'+pill(e.situacao)+'</td>'+
+      '</tr>';
+    }).join('')||'<tr><td colspan="15" class="muted" style="padding:16px">Nenhum evento encontrado.</td></tr>';
+    var pax=list.reduce(function(a,e){return a+e.inteiros+e.meios;},0);
+    var fat=list.reduce(function(a,e){return a+e.total;},0);
+    document.getElementById('daySummary').innerHTML='<strong>'+list.length+' eventos</strong> · '+pax+' convidados · <span class="money">'+money(fat)+' no dia</span>';
   }
   renderDay();
   document.getElementById('daySearch').addEventListener('input',function(){renderDay(this.value);});
 
   // next events (painel)
-  document.getElementById('nextEvents').innerHTML=dayEvents.slice(0,4).map(function(e){
-    return '<div class="row"><div class="time">'+e[0]+'</div><div class="rmain"><div class="rtitle">'+e[1]+
-      '</div><div class="rmeta"><span class="tag">'+e[2]+'</span> · '+e[3]+'</div></div>'+pill(e[6])+'</div>';
+  document.getElementById('nextEvents').innerHTML=agenda.slice(0,4).map(function(e){
+    return '<div class="row"><div class="time">'+e.hora+'</div><div class="rmain"><div class="rtitle">'+e.contato+
+      '</div><div class="rmeta"><span class="tag">'+e.tipo+'</span> · '+e.cidade+'</div></div>'+pill(e.situacao)+'</div>';
   }).join('');
 
   // ---- Events table ----
   var allEvents=[
-    ['19/12','Ana & Rafael','Casamento','Santo André',10,'Confirmado',5400],
-    ['19/12','Colégio Santa Rosa','Formatura','Guarulhos',8,'Confirmado',3200],
-    ['19/12','Tech Solutions','Empresarial','Barueri',6,'Confirmado',2400],
-    ['18/12','Grupo Ômega','Empresarial','Barueri',6,'Realizado',2600],
-    ['15/12','Prefeitura — Natal','Confraternização','Osasco',9,'Realizado',4100],
-    ['12/12','Camila & Diego','Casamento','Campinas',12,'Confirmado',6200],
-    ['09/12','Farmácia Bem Viver','Empresarial','São Paulo',4,'Realizado',1800],
-    ['05/12','Juliana Prado','Aniversário','São Paulo',3,'Realizado',620],
-    ['02/12','Loja Center Mais','Confraternização','São Paulo',5,'Cancelado',1500],
-    ['28/11','Escola Novo Saber','Formatura','Santo André',7,'Realizado',2900]
+    ['19/12','Fam. Oliveira','Casamento','Canoas',180,'Plus 4h','Confirmado',9400],
+    ['19/12','Colégio Santa Rosa','Formatura','Novo Hamburgo',120,'Premium 3h','Confirmado',7200],
+    ['19/12','Metalúrgica Sul','Empresarial','Gravataí',90,'Premium 4h','Confirmado',5800],
+    ['18/12','Grupo Ômega','Empresarial','Porto Alegre',60,'Premium 3h','Finalizado',3600],
+    ['15/12','Prefeitura — Natal','Confraternização','Viamão',140,'Clássico','Finalizado',6100],
+    ['12/12','Camila & Diego','Casamento','São Leopoldo',110,'Plus 3h','Confirmado',8200],
+    ['09/12','Farmácia Bem Viver','Empresarial','Porto Alegre',45,'Clássico','Finalizado',2200],
+    ['05/12','Juliana Prado','Aniversário','Cachoeirinha',35,'Clássico','Finalizado',1620],
+    ['02/12','Loja Center Mais','Confraternização','Canoas',55,'Premium 3h','Cancelado',3100],
+    ['28/11','Escola Novo Saber','Formatura','Campo Bom',70,'Premium 4h','Finalizado',4200]
   ];
   function renderEv(filter){
     filter=(filter||'').toLowerCase();
@@ -587,8 +643,9 @@
       return !filter||e[1].toLowerCase().indexOf(filter)>=0||e[2].toLowerCase().indexOf(filter)>=0||e[3].toLowerCase().indexOf(filter)>=0;
     }).map(function(e){
       return '<tr><td style="font-variant-numeric:tabular-nums">'+e[0]+'</td><td style="font-weight:600">'+e[1]+
-        '</td><td><span class="tag">'+e[2]+'</span></td><td>'+e[3]+'</td><td>'+e[4]+'</td><td>'+pill(e[5])+
-        '</td><td class="money" style="font-variant-numeric:tabular-nums;font-weight:600">'+money(e[6])+'</td></tr>';
+        '</td><td><span class="tag">'+e[2]+'</span></td><td>'+e[3]+'</td><td style="font-variant-numeric:tabular-nums">'+e[4]+
+        '</td><td>'+e[5]+'</td><td>'+pill(e[6])+
+        '</td><td class="money" style="font-variant-numeric:tabular-nums;font-weight:600">'+money(e[7])+'</td></tr>';
     }).join('');
   }
   renderEv();
@@ -696,11 +753,12 @@
 
   // ---- Save new event ----
   document.getElementById('saveEvento').addEventListener('click',function(){
-    var ins=document.getElementById('formEvento').querySelectorAll('input,select');
-    allEvents.unshift([ins[2].value||'—',ins[0].value||'Novo cliente',ins[1].value,ins[4].value||'—',
-      parseInt(ins[5].value,10)||3,ins[7].value,parseInt(ins[6].value,10)||0]);
+    function v(id){return document.getElementById(id).value;}
+    var modelo=(v('neModelo').split(' — ')[0]);
+    allEvents.unshift([v('neData')||'—', v('neCliente')||'Novo cliente', v('neTipo'), v('neCidade')||'—',
+      parseInt(v('nePessoas'),10)||0, modelo, v('neSituacao'), parseInt(v('neTotal'),10)||0]);
     renderEv('');document.getElementById('evSearch').value='';
-    ins.forEach(function(x){if(x.tagName==='INPUT')x.value='';});
+    ['neCliente','neData','neCidade','nePessoas','neTotal'].forEach(function(id){document.getElementById(id).value='';});
     document.getElementById('formEvento').hidden=true;
   });
 
