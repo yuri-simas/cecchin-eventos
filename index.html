@@ -266,6 +266,22 @@
   .subtle{color:var(--ink-faint);font-size:11px;margin-top:1px}
   .scrollhint{font-size:11.5px;color:var(--ink-faint);display:flex;align-items:center;gap:5px;margin:0 0 8px}
   .scrollhint svg{width:14px;height:14px}
+  .aperiod{font-size:12px;text-transform:uppercase;letter-spacing:.5px;color:var(--ink-faint);margin:20px 0 11px;display:flex;align-items:center;gap:8px}
+  .aperiod:first-child{margin-top:2px}
+  .aperiod .n{background:var(--surface-3);color:var(--ink-soft);border-radius:999px;padding:1px 9px;font-size:11px}
+  .acards{display:grid;grid-template-columns:repeat(auto-fill,minmax(258px,1fr));gap:12px}
+  .acard{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:13px 15px;box-shadow:var(--shadow)}
+  .acard-top{display:flex;align-items:center;gap:8px;margin-bottom:9px}
+  .acard-time{font-weight:700;font-size:15px;font-variant-numeric:tabular-nums}
+  .acard-seq{font-size:11px;color:var(--ink-faint);font-variant-numeric:tabular-nums}
+  .acard-top .pill{margin-left:auto}
+  .acard-name{font-weight:700;font-size:14.5px}
+  .acard-sub{font-size:12.5px;color:var(--ink-soft);margin-top:4px;display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+  .acard-facts{display:flex;flex-wrap:wrap;gap:6px;margin-top:11px}
+  .acard-facts span{font-size:11.5px;background:var(--surface-2);color:var(--ink-soft);border-radius:6px;padding:3px 8px}
+  .acard-money{margin-top:11px;padding-top:10px;border-top:1px solid var(--line)}
+  .acard-total{font-weight:700;font-size:15px;font-variant-numeric:tabular-nums}
+  .acard-sub2{display:block;font-size:11.5px;color:var(--ink-faint);margin-top:2px}
   .screen{display:none}.screen.show{display:block}
 </style>
 </head>
@@ -386,17 +402,26 @@
         <h2 class="pagetitle" style="font-family:var(--serif);font-size:24px;margin:0">Sábado, 19 de dezembro</h2>
         <p class="pagesub" style="margin:2px 0 14px" id="daySummary"><strong>87 eventos</strong> neste dia</p>
         <div class="peakbanner"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2 3 20h18L12 2z"/><path d="M12 9v5M12 17h.01"/></svg>Dia de pico — role para baixo para ver todos os eventos e para o lado para ver todas as colunas.</div>
-        <div class="search"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m20 20-3-3"/></svg><input id="daySearch" placeholder="Buscar por cliente ou cidade…"></div>
-        <p class="scrollhint"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 7l-4 5 4 5M16 7l4 5-4 5"/></svg>Arraste a tabela para o lado para ver mais colunas</p>
-        <div class="tablewrap"><table class="ev agenda">
-          <thead><tr>
-            <th>#</th><th>Horário</th><th>Cliente · contato</th><th>Cidade · bairro</th><th>Tipo</th>
-            <th>Forno</th><th>Pessoas</th><th>Modelo</th><th>Tipo forno</th>
-            <th class="money">R$/pessoa</th><th class="money">Total</th><th class="money">Sinal</th><th class="money">A acertar</th>
-            <th>Pagamento</th><th>Situação</th>
-          </tr></thead>
-          <tbody id="dayBody"></tbody>
-        </table></div>
+        <div class="toolbar">
+          <div class="search" style="flex:1"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m20 20-3-3"/></svg><input id="daySearch" placeholder="Buscar por cliente ou cidade…"></div>
+          <div class="seg" id="dayViewSeg" style="width:210px">
+            <button class="on" data-view="cards">Cartões</button>
+            <button data-view="table">Tabela</button>
+          </div>
+        </div>
+        <div id="dayCardsWrap"><div id="dayCards"></div></div>
+        <div id="dayTableWrap" hidden>
+          <p class="scrollhint"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 7l-4 5 4 5M16 7l4 5-4 5"/></svg>Arraste a tabela para o lado para ver mais colunas</p>
+          <div class="tablewrap"><table class="ev agenda">
+            <thead><tr>
+              <th>#</th><th>Horário</th><th>Cliente · contato</th><th>Cidade · bairro</th><th>Tipo</th>
+              <th>Forno</th><th>Pessoas</th><th>Modelo</th><th>Tipo forno</th>
+              <th class="money">R$/pessoa</th><th class="money">Total</th><th class="money">Sinal</th><th class="money">A acertar</th>
+              <th>Pagamento</th><th>Situação</th>
+            </tr></thead>
+            <tbody id="dayBody"></tbody>
+          </table></div>
+        </div>
       </section>
 
       <!-- EVENTOS -->
@@ -589,34 +614,59 @@
       total:total, sinal:sinal, acertar:total-sinal,
       pagto:pagamentos[di%pagamentos.length], situacao:situacoes[di%situacoes.length]});
   }
+  function rowHtml(e){
+    return '<tr>'+
+      '<td class="evseq">'+e.seq+'</td>'+
+      '<td style="font-weight:600;font-variant-numeric:tabular-nums">'+e.hora+'</td>'+
+      '<td><div style="font-weight:600">'+e.contato+'</div><div class="subtle">'+e.tel+'</div></td>'+
+      '<td>'+e.cidade+'<div class="subtle">'+e.bairro+'</div></td>'+
+      '<td><span class="tag">'+e.tipo+'</span></td>'+
+      '<td>'+e.forno+'</td>'+
+      '<td style="font-variant-numeric:tabular-nums">'+e.inteiros+(e.meios?' + '+e.meios+' meia':'')+'</td>'+
+      '<td>'+e.modelo+'</td>'+
+      '<td>'+e.fornoTipo+'</td>'+
+      '<td class="money" style="font-variant-numeric:tabular-nums">'+fmt2(e.vp)+'</td>'+
+      '<td class="money" style="font-variant-numeric:tabular-nums;font-weight:600">'+money(e.total)+'</td>'+
+      '<td class="money" style="font-variant-numeric:tabular-nums">'+money(e.sinal)+'</td>'+
+      '<td class="money" style="font-variant-numeric:tabular-nums">'+money(e.acertar)+'</td>'+
+      '<td>'+e.pagto+'</td>'+
+      '<td>'+pill(e.situacao)+'</td>'+
+    '</tr>';
+  }
+  function cardHtml(e){
+    return '<div class="acard">'+
+      '<div class="acard-top"><span class="acard-time">'+e.hora+'</span><span class="acard-seq">#'+e.seq+'</span>'+pill(e.situacao)+'</div>'+
+      '<div class="acard-name">'+e.contato+'</div>'+
+      '<div class="acard-sub"><span class="tag">'+e.tipo+'</span> '+e.cidade+' · '+e.bairro+'</div>'+
+      '<div class="acard-facts"><span>'+(e.inteiros+e.meios)+' pessoas</span><span>'+e.modelo+'</span><span>Forno: '+e.forno+'</span><span>'+e.fornoTipo+'</span></div>'+
+      '<div class="acard-money money"><span class="acard-total">'+money(e.total)+'</span><span class="acard-sub2">Sinal '+money(e.sinal)+' · a acertar '+money(e.acertar)+' · '+e.pagto+'</span></div>'+
+    '</div>';
+  }
+  function periodOf(h){var hr=parseInt(h,10);return hr<12?'Manhã':hr<18?'Tarde':'Noite';}
   function renderDay(filter){
     filter=(filter||'').toLowerCase();
     var list=agenda.filter(function(e){return !filter||e.contato.toLowerCase().indexOf(filter)>=0||e.cidade.toLowerCase().indexOf(filter)>=0;});
-    document.getElementById('dayBody').innerHTML=list.map(function(e){
-      return '<tr>'+
-        '<td class="evseq">'+e.seq+'</td>'+
-        '<td style="font-weight:600;font-variant-numeric:tabular-nums">'+e.hora+'</td>'+
-        '<td><div style="font-weight:600">'+e.contato+'</div><div class="subtle">'+e.tel+'</div></td>'+
-        '<td>'+e.cidade+'<div class="subtle">'+e.bairro+'</div></td>'+
-        '<td><span class="tag">'+e.tipo+'</span></td>'+
-        '<td>'+e.forno+'</td>'+
-        '<td style="font-variant-numeric:tabular-nums">'+e.inteiros+(e.meios?' + '+e.meios+' meia':'')+'</td>'+
-        '<td>'+e.modelo+'</td>'+
-        '<td>'+e.fornoTipo+'</td>'+
-        '<td class="money" style="font-variant-numeric:tabular-nums">'+fmt2(e.vp)+'</td>'+
-        '<td class="money" style="font-variant-numeric:tabular-nums;font-weight:600">'+money(e.total)+'</td>'+
-        '<td class="money" style="font-variant-numeric:tabular-nums">'+money(e.sinal)+'</td>'+
-        '<td class="money" style="font-variant-numeric:tabular-nums">'+money(e.acertar)+'</td>'+
-        '<td>'+e.pagto+'</td>'+
-        '<td>'+pill(e.situacao)+'</td>'+
-      '</tr>';
-    }).join('')||'<tr><td colspan="15" class="muted" style="padding:16px">Nenhum evento encontrado.</td></tr>';
+    document.getElementById('dayBody').innerHTML=list.map(rowHtml).join('')||'<tr><td colspan="15" class="muted" style="padding:16px">Nenhum evento encontrado.</td></tr>';
+    var groups={'Manhã':[],'Tarde':[],'Noite':[]};
+    list.forEach(function(e){groups[periodOf(e.hora)].push(e);});
+    var cards=['Manhã','Tarde','Noite'].map(function(p){
+      if(!groups[p].length)return '';
+      return '<div class="aperiod">'+p+' <span class="n">'+groups[p].length+'</span></div><div class="acards">'+groups[p].map(cardHtml).join('')+'</div>';
+    }).join('');
+    document.getElementById('dayCards').innerHTML=cards||'<p class="muted" style="padding:12px 2px">Nenhum evento encontrado.</p>';
     var pax=list.reduce(function(a,e){return a+e.inteiros+e.meios;},0);
     var fat=list.reduce(function(a,e){return a+e.total;},0);
     document.getElementById('daySummary').innerHTML='<strong>'+list.length+' eventos</strong> · '+pax+' convidados · <span class="money">'+money(fat)+' no dia</span>';
   }
   renderDay();
   document.getElementById('daySearch').addEventListener('input',function(){renderDay(this.value);});
+  document.getElementById('dayViewSeg').addEventListener('click',function(e){
+    var b=e.target.closest('button'); if(!b)return;
+    this.querySelectorAll('button').forEach(function(x){x.classList.toggle('on',x===b);});
+    var cards=b.dataset.view==='cards';
+    document.getElementById('dayCardsWrap').hidden=!cards;
+    document.getElementById('dayTableWrap').hidden=cards;
+  });
 
   // next events (painel)
   document.getElementById('nextEvents').innerHTML=agenda.slice(0,4).map(function(e){
