@@ -282,6 +282,15 @@
   .acard-money{margin-top:11px;padding-top:10px;border-top:1px solid var(--line)}
   .acard-total{font-weight:700;font-size:15px;font-variant-numeric:tabular-nums}
   .acard-sub2{display:block;font-size:11.5px;color:var(--ink-faint);margin-top:2px}
+  .agenda-scroll{max-height:66vh;overflow:auto;border:1px solid var(--line);border-radius:var(--radius);position:relative;cursor:grab;overscroll-behavior:contain}
+  .agenda-scroll.grabbing{cursor:grabbing;user-select:none}
+  .agenda-scroll table.ev.agenda{border:0;border-radius:0}
+  table.ev.agenda thead th{position:sticky;top:0;background:var(--surface-2);z-index:2}
+  table.ev.agenda th:nth-child(1),table.ev.agenda td:nth-child(1){position:sticky;left:0;background:var(--surface);width:40px;min-width:40px;max-width:40px}
+  table.ev.agenda td:nth-child(2),table.ev.agenda th:nth-child(2){position:sticky;left:40px;background:var(--surface)}
+  table.ev.agenda th:nth-child(2)::after,table.ev.agenda td:nth-child(2)::after{content:"";position:absolute;top:0;bottom:0;right:0;width:1px;background:var(--line)}
+  table.ev.agenda thead th:nth-child(1),table.ev.agenda thead th:nth-child(2){z-index:3;background:var(--surface-2)}
+  table.ev.agenda td:nth-child(1),table.ev.agenda td:nth-child(2){z-index:1}
   .screen{display:none}.screen.show{display:block}
 </style>
 </head>
@@ -313,7 +322,7 @@
       </div>
     </div>
     <button class="navbtn active" data-go="painel"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/></svg>Painel</button>
-    <button class="navbtn" data-go="calendario"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4.5" width="18" height="16" rx="2.5"/><path d="M3 9h18M8 2.5v4M16 2.5v4"/></svg>Calendário</button>
+    <button class="navbtn" data-go="calendario"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4.5" width="18" height="16" rx="2.5"/><path d="M3 9h18M8 2.5v4M16 2.5v4"/></svg>Agenda</button>
     <button class="navbtn" data-go="eventos"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 6h13M8 12h13M8 18h13M3.5 6h.01M3.5 12h.01M3.5 18h.01"/></svg>Eventos</button>
     <button class="navbtn" data-go="clientes"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="8" r="3.2"/><path d="M3.5 20a5.5 5.5 0 0 1 11 0M16 6.5a3 3 0 0 1 0 5.8M18 20a5 5 0 0 0-3-4.6"/></svg>Clientes</button>
     <button class="navbtn" data-go="freelancers"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M5 21a7 7 0 0 1 14 0"/><path d="m12 2 .9 1.9 2 .3-1.5 1.4.4 2-1.8-1-1.8 1 .4-2-1.5-1.4 2-.3z" fill="currentColor" stroke="none" opacity=".0"/></svg>Freelancers</button>
@@ -398,7 +407,7 @@
 
       <!-- DIA -->
       <section class="screen" id="dia">
-        <button class="backlink" data-go="calendario"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 5l-7 7 7 7"/></svg>Voltar ao calendário</button>
+        <button class="backlink" data-go="calendario"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 5l-7 7 7 7"/></svg>Voltar à agenda</button>
         <h2 class="pagetitle" style="font-family:var(--serif);font-size:24px;margin:0">Sábado, 19 de dezembro</h2>
         <p class="pagesub" style="margin:2px 0 14px" id="daySummary"><strong>87 eventos</strong> neste dia</p>
         <div class="peakbanner"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2 3 20h18L12 2z"/><path d="M12 9v5M12 17h.01"/></svg>Dia de pico — role para baixo para ver todos os eventos e para o lado para ver todas as colunas.</div>
@@ -411,8 +420,8 @@
         </div>
         <div id="dayCardsWrap"><div id="dayCards"></div></div>
         <div id="dayTableWrap" hidden>
-          <p class="scrollhint"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 7l-4 5 4 5M16 7l4 5-4 5"/></svg>Arraste a tabela para o lado para ver mais colunas</p>
-          <div class="tablewrap"><table class="ev agenda">
+          <p class="scrollhint"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 7l-4 5 4 5M16 7l4 5-4 5"/></svg>Arraste a tabela para os lados (ou use a barra) para ver mais colunas. O nº, o horário e o cabeçalho ficam fixos.</p>
+          <div class="tablewrap agenda-scroll" id="dayScroll"><table class="ev agenda">
             <thead><tr>
               <th>#</th><th>Horário</th><th>Cliente · contato</th><th>Cidade · bairro</th><th>Tipo</th>
               <th>Forno</th><th>Pessoas</th><th>Modelo</th><th>Tipo forno</th>
@@ -667,6 +676,28 @@
     document.getElementById('dayCardsWrap').hidden=!cards;
     document.getElementById('dayTableWrap').hidden=cards;
   });
+  // ---- Drag to pan the wide agenda table ----
+  (function(){
+    var sc=document.getElementById('dayScroll'), down=false, sx=0, sy=0, sl=0, st=0, moved=false;
+    if(!sc)return;
+    sc.addEventListener('pointerdown',function(e){
+      if(e.target.closest('a,button,input,select'))return;
+      down=true;moved=false;sx=e.clientX;sy=e.clientY;sl=sc.scrollLeft;st=sc.scrollTop;
+      sc.classList.add('grabbing');
+    });
+    window.addEventListener('pointermove',function(e){
+      if(!down)return;
+      var dx=e.clientX-sx, dy=e.clientY-sy;
+      if(Math.abs(dx)+Math.abs(dy)>4)moved=true;
+      sc.scrollLeft=sl-dx;sc.scrollTop=st-dy;
+    });
+    window.addEventListener('pointerup',function(){down=false;sc.classList.remove('grabbing');});
+    sc.addEventListener('click',function(e){if(moved){e.preventDefault();e.stopPropagation();}},true);
+    // shift + wheel scrolls sideways
+    sc.addEventListener('wheel',function(e){
+      if(e.shiftKey&&e.deltaY){sc.scrollLeft+=e.deltaY;e.preventDefault();}
+    },{passive:false});
+  })();
 
   // next events (painel)
   document.getElementById('nextEvents').innerHTML=agenda.slice(0,4).map(function(e){
